@@ -2,9 +2,9 @@ FROM ubuntu:16.04
 
 MAINTAINER z4yx <z4yx@users.noreply.github.com>
 
-# build with docker build --build-arg PETA_VERSION=2018.1 --build-arg PETA_RUN_FILE=petalinux-v2018.1-final-installer.run -t petalinux:2018.1 .
+# build with docker build --build-arg PETA_VERSION=2018.x --build-arg PETA_RUN_FILE=petalinux-v2018.x-final-installer.run -t petalinux:2018.x .
 
-ARG UBUNTU_MIRROR=mirror.tuna.tsinghua.edu.cn
+ARG UBUNTU_MIRROR=mirror.yandex.ru
 
 #install dependences:
 RUN sed -i.bak s/archive.ubuntu.com/${UBUNTU_MIRROR}/g /etc/apt/sources.list && \
@@ -49,6 +49,9 @@ RUN sed -i.bak s/archive.ubuntu.com/${UBUNTU_MIRROR}/g /etc/apt/sources.list && 
   locales \
   kmod \
   git \
+  git-cola \
+  mc \
+  vi \
   rsync \
   bc \
   u-boot-tools \
@@ -60,6 +63,21 @@ ARG PETA_RUN_FILE
 
 RUN locale-gen en_US.UTF-8 && update-locale
 
+RUN mkdir /tfptboot
+RUN touch /etc/xinetd.d/tftp
+RUN echo "service tftp" >> /etc/xinetd.d/tftp
+RUN echo "{" >> /etc/xinetd.d/tftp
+RUN echo "protocol = udp" >> /etc/xinetd.d/tftp
+RUN echo "port = 69" >> /etc/xinetd.d/tftp
+RUN echo "socket_type = dgram" >> /etc/xinetd.d/tftp
+RUN echo "wait = yes" >> /etc/xinetd.d/tftp
+RUN echo "user = nobody" >> /etc/xinetd.d/tftp
+RUN echo "server = /usr/sbin/in.tftpd" >> /etc/xinetd.d/tftp
+RUN echo "server_args = /home/embedded/tftpboot" >> /etc/xinetd.d/tftp
+RUN echo "disable = no" >> /etc/xinetd.d/tftp
+RUN echo "}" >> /etc/xinetd.d/tftp
+RUN service xinetd restart
+
 #make a Vivado user
 RUN adduser --disabled-password --gecos '' vivado && \
   usermod -aG sudo vivado && \
@@ -70,10 +88,10 @@ COPY accept-eula.sh ${PETA_RUN_FILE} /
 # run the install
 RUN chmod a+rx /${PETA_RUN_FILE} && \
   chmod a+rx /accept-eula.sh && \
-  mkdir -p /opt/Xilinx && \
-  chmod 777 /tmp /opt/Xilinx && \
+  mkdir -p /opt/xilinx && \
+  chmod 777 /tmp /opt/xilinx && \
   cd /tmp && \
-  sudo -u vivado -i /accept-eula.sh /${PETA_RUN_FILE} /opt/Xilinx/petalinux && \
+  sudo -u vivado -i /accept-eula.sh /${PETA_RUN_FILE} /opt/xilinx/petalinux && \
   rm -f /${PETA_RUN_FILE} /accept-eula.sh 
 
 # make /bin/sh symlink to bash instead of dash:
@@ -87,5 +105,4 @@ RUN mkdir /home/vivado/project
 WORKDIR /home/vivado/project
 
 #add vivado tools to path
-RUN echo "source /opt/Xilinx/petalinux/settings.sh" >> /home/vivado/.bashrc
-
+RUN echo "source /opt/xilinx/petalinux/settings.sh" >> /home/vivado/.bashrc

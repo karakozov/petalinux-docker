@@ -63,21 +63,6 @@ ARG PETA_RUN_FILE
 
 RUN locale-gen en_US.UTF-8 && update-locale
 
-RUN mkdir /tfptboot
-RUN touch /etc/xinetd.d/tftp
-RUN echo "service tftp" >> /etc/xinetd.d/tftp
-RUN echo "{" >> /etc/xinetd.d/tftp
-RUN echo "protocol = udp" >> /etc/xinetd.d/tftp
-RUN echo "port = 69" >> /etc/xinetd.d/tftp
-RUN echo "socket_type = dgram" >> /etc/xinetd.d/tftp
-RUN echo "wait = yes" >> /etc/xinetd.d/tftp
-RUN echo "user = nobody" >> /etc/xinetd.d/tftp
-RUN echo "server = /usr/sbin/in.tftpd" >> /etc/xinetd.d/tftp
-RUN echo "server_args = /home/embedded/tftpboot" >> /etc/xinetd.d/tftp
-RUN echo "disable = no" >> /etc/xinetd.d/tftp
-RUN echo "}" >> /etc/xinetd.d/tftp
-RUN service xinetd restart
-
 #make a Vivado user
 RUN adduser --disabled-password --gecos '' vivado && \
   usermod -aG sudo vivado && \
